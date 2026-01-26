@@ -1,10 +1,3 @@
-//
-//  SceneDelegate.swift
-//  EffectiveMobile
-//
-//  Created by Muhammed Nurmukhanov on 26.01.2026.
-//
-
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
