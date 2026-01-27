@@ -1,8 +1,8 @@
-// MARK: - Structure for single task 
+// MARK: - Structure for single task in response
 
 import Foundation
 
-struct Task: Codable {
+struct TaskForResponse: Codable {
     let id: Int
     let todo: String
     let completed: Bool

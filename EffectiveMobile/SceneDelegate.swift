@@ -18,9 +18,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             networkClient: DefaultNetworkClient()
         )
         
+        let taskStore = TaskStore()
+        
         appCoordinator = AppCoordinator(
             window: window,
-            servicesAssembly: servicesAssembly
+            servicesAssembly: servicesAssembly,
+            taskStore: taskStore
         )
         
         appCoordinator?.start()

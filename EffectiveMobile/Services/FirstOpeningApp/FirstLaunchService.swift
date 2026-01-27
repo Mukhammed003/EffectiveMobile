@@ -3,30 +3,34 @@ import UIKit
 
 final class FirstLaunchService {
     
-    private static let key = "hasLaunchedBefore"
+    weak var presenter: LoadingPresentable?
+    
     private var servicesAssembly: ServicesAssembly?
+    private var taskStore: TaskStore?
     private var currentTask: NetworkTask?
+    private var convertedData: [TaskForCoreData] = []
     
-    weak var presenter: UIViewController?
-    
-    init(servicesAssembly: ServicesAssembly?) {
+    init(servicesAssembly: ServicesAssembly?, taskStore: TaskStore?) {
         self.servicesAssembly = servicesAssembly
+        self.taskStore = taskStore
     }
     
     func checkFirstLaunch() {
         let defaults = UserDefaults.standard
 
-        if !defaults.bool(forKey: FirstLaunchService.key) {
-            defaults.set(true, forKey: FirstLaunchService.key)
+        if !defaults.bool(forKey: Constants.firstLaunchServicekey) {
+            defaults.set(true, forKey: Constants.firstLaunchServicekey)
 
             print("Первый запуск приложения")
             
-            fetchProfileInfo()
+            loadData()
         }
     }
     
-    private func fetchProfileInfo() {
+    private func loadData() {
         print("Дошло")
+        
+        presenter?.showLoader()
         
         currentTask = servicesAssembly?.tasksService.getUsers { [weak self] result in
             DispatchQueue.main.async {
@@ -36,31 +40,40 @@ final class FirstLaunchService {
                 case .success(let tasks):
                     let listOfTasks = TasksListViewData(tasksList: tasks)
                     print("Данные для списка задач загружены: \(listOfTasks.todos.count)")
+                    
+                    self.convertedData = self.convertToCoreDataModel(listOfTasks: listOfTasks)
+                    
+                    self.addFetchedDataToCoreData()
+                    self.presenter?.hideLoader()
                 case .failure (_):
                     print("Ошибка во время загрузки данных для списка задач")
-                    self.showErrorAlert()
+                    self.presenter?.hideLoader()
+                    self.presenter?.showError {
+                        self.loadData()
+                    }
                 }
             }
         }
     }
     
-    private func showErrorAlert() {
-        let repeatAction = UIAlertAction(title: "Повторить", style: .default) { [weak self] _ in
-            self?.fetchProfileInfo()
+    private func convertToCoreDataModel(listOfTasks: TasksListViewData) -> [TaskForCoreData] {
+        return listOfTasks.todos.compactMap { task in
+            TaskForCoreData(
+                id: Int16(task.id),
+                name: task.todo,
+                descriptionText: "",
+                status: task.completed,
+                date: Date.now
+            )
         }
-        let cancelAction = UIAlertAction(title: "Отменить", style: .cancel)
+    }
+    
+    private func addFetchedDataToCoreData() {
+        convertedData.forEach { task in
+            taskStore?.addNewTask(taskForCoreData: task)
+        }
         
-        
-        let alert = UIAlertController(
-            title: "Ошибка во время загрузки данных",
-            message: nil,
-            preferredStyle: .alert
-        )
-        
-        alert.addAction(repeatAction)
-        alert.addAction(cancelAction)
-        
-        presenter?.present(alert, animated: true)
+        taskStore?.debugPrintAllTasks()
     }
 }
 
