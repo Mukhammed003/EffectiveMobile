@@ -2,7 +2,7 @@
 
 import Foundation
 
-struct TaskForCoreData {
+struct SingleTask {
     let id: Int16
     let name: String
     let descriptionText: String

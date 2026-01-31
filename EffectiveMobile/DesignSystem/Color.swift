@@ -25,6 +25,11 @@ extension UIColor {
         )
     }
     
-    static let whiteForText = UIColor(hexString: "#F4F4F4")
+    static let whiteForText = UIColor(hexString: "#F4F4F4") 
+    static let forViewBackground = UIColor(hexString: "#040404")
+    static let forSearchFieldBackground = UIColor(hexString: "#272729")
+    static let semiLightWhiteForText = whiteForText.withAlphaComponent(0.5)
+    static let yellowForButtons = UIColor(hexString: "#FED702")
+    static let grayForUnselectedButtons = UIColor(hexString: "#4D555E")
 }
 

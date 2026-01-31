@@ -66,7 +66,7 @@ final class TaskStore: NSObject {
         }
     }
     
-    func addNewTask(taskForCoreData: TaskForCoreData) {
+    func addNewTask(taskForCoreData: SingleTask) {
         let task = TaskCoreData(context: context)
         
         task.id = taskForCoreData.id
@@ -74,6 +74,13 @@ final class TaskStore: NSObject {
         task.descriptionText = taskForCoreData.descriptionText
         task.status = taskForCoreData.status
         task.date = taskForCoreData.date
+        
+        saveContext()
+    }
+    
+    func getAllTasks() -> [SingleTask] {
+        guard let objects = fetchedResultController?.fetchedObjects else { return [] }
+        return objects.compactMap { try? self.task(taskCoreData: $0) }
     }
     
     func debugPrintAllTasks() {
@@ -88,6 +95,27 @@ final class TaskStore: NSObject {
         } catch {
             print("Не удалось выполнить запрос по выкачке всех задач: \(error)")
         }
+    }
+    
+    private func task(taskCoreData: TaskCoreData) throws -> SingleTask {
+        guard let name = taskCoreData.name else {
+            throw TaskStoreError.decodingErrorInvalidName
+        }
+        
+        guard let descriptionText = taskCoreData.descriptionText else {
+            throw TaskStoreError.decodingErrorInvalidDescriptionText
+        }
+        
+        guard let date = taskCoreData.date else {
+            throw TaskStoreError.decodingErrorInvalidDate
+        }
+        
+        return SingleTask(
+            id: taskCoreData.id,
+            name: name,
+            descriptionText: descriptionText,
+            status: taskCoreData.status,
+            date: date)
     }
     
     private func saveContext() {

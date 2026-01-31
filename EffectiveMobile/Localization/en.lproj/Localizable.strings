@@ -1,0 +1,3 @@
+//TasksListViewController
+"tasks.header.title" = "Tasks";
+"tasks.searchField.placeholder" = "Search";

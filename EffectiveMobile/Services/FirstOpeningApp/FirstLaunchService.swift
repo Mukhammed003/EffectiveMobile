@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 final class FirstLaunchService {
     
@@ -8,7 +7,6 @@ final class FirstLaunchService {
     private var servicesAssembly: ServicesAssembly?
     private var taskStore: TaskStore?
     private var currentTask: NetworkTask?
-    private var convertedData: [TaskForCoreData] = []
     
     init(servicesAssembly: ServicesAssembly?, taskStore: TaskStore?) {
         self.servicesAssembly = servicesAssembly
@@ -30,22 +28,28 @@ final class FirstLaunchService {
     private func loadData() {
         print("Дошло")
         
-        presenter?.showLoader()
+        DispatchQueue.main.async { [weak self] in
+            self?.presenter?.showLoader()
+        }
         
         currentTask = servicesAssembly?.tasksService.getUsers { [weak self] result in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                
-                switch result {
-                case .success(let tasks):
+            guard let self else { return }
+            
+            switch result {
+            case .success(let tasks):
+                DispatchQueue.global(qos: .userInitiated).async {
                     let listOfTasks = TasksListViewData(tasksList: tasks)
                     print("Данные для списка задач загружены: \(listOfTasks.todos.count)")
                     
-                    self.convertedData = self.convertToCoreDataModel(listOfTasks: listOfTasks)
+                    let convertedData = self.convertToCoreDataModel(listOfTasks: listOfTasks)
                     
-                    self.addFetchedDataToCoreData()
-                    self.presenter?.hideLoader()
-                case .failure (_):
+                    DispatchQueue.main.async {
+                        self.addFetchedDataToCoreData(convertedData)
+                        self.presenter?.hideLoader()
+                    }
+                }
+            case .failure (_):
+                DispatchQueue.main.async {
                     print("Ошибка во время загрузки данных для списка задач")
                     self.presenter?.hideLoader()
                     self.presenter?.showError {
@@ -56,9 +60,9 @@ final class FirstLaunchService {
         }
     }
     
-    private func convertToCoreDataModel(listOfTasks: TasksListViewData) -> [TaskForCoreData] {
+    private func convertToCoreDataModel(listOfTasks: TasksListViewData) -> [SingleTask] {
         return listOfTasks.todos.compactMap { task in
-            TaskForCoreData(
+            SingleTask(
                 id: Int16(task.id),
                 name: task.todo,
                 descriptionText: "",
@@ -68,8 +72,8 @@ final class FirstLaunchService {
         }
     }
     
-    private func addFetchedDataToCoreData() {
-        convertedData.forEach { task in
+    private func addFetchedDataToCoreData(_ tasks: [SingleTask]) {
+        tasks.forEach { task in
             taskStore?.addNewTask(taskForCoreData: task)
         }
         

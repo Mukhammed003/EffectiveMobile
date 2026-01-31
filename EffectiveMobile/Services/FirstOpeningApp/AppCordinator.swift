@@ -20,7 +20,11 @@ final class AppCoordinator {
         let taskListViewModel = TaskListViewModel(taskStore: taskStore)
         
         let rootVc = TasksListViewController(viewModel: taskListViewModel)
-        window.rootViewController = rootVc
+        let navVc = UINavigationController(rootViewController: rootVc)
+        
+        let titleOfNavBarOnTasksPage = NSLocalizedString("trackers.header.title", comment: "")
+        
+        window.rootViewController = navVc
         window.makeKeyAndVisible()
         
         firstLaunchService.presenter = rootVc
