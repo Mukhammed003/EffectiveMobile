@@ -1,12 +1,16 @@
 import UIKit
 
+enum TreckerCreationError: Error {
+    case duplicate
+}
+
 protocol LoadingPresentable: AnyObject {
     func showLoader()
     func hideLoader()
     func showError(retryAction: @escaping () -> Void)
 }
 
-final class TasksListViewController: UIViewController, LoadingPresentable, UISearchResultsUpdating {
+final class TaskListViewController: UIViewController, LoadingPresentable, UISearchResultsUpdating {
     
     private let viewModel: TaskListViewModel
     
@@ -110,17 +114,23 @@ final class TasksListViewController: UIViewController, LoadingPresentable, UISea
     }
     
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        nil
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .forViewBackground
         
-        viewModel.loadDataFromCoreDate()
+        viewModel.taskStore.delegate = self
         
         addSubviewsAndSetupAllViews()
         updateCountOfTasks()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        navigationController?.navigationBar.prefersLargeTitles = true
     }
     
     func updateSearchResults(for searchController: UISearchController) {
@@ -160,7 +170,26 @@ final class TasksListViewController: UIViewController, LoadingPresentable, UISea
     }
     
     @objc private func addNewTaskButtonTapped() {
-        //TODO: Make add new task logic
+        let viewModel = TaskViewModel(taskMode: .add)
+        viewModel.newTaskId = self.viewModel.calculateIdForNewTask()
+        let viewController = TaskViewController(viewModel: viewModel)
+        let backButtonTitle = NSLocalizedString("navigationItem.backButton.title", comment: "")
+        
+        self.navigationItem.backButtonTitle = backButtonTitle
+        
+        viewController.onCreate = { [weak self] task, completion in
+            guard let self else { return }
+            
+            if self.viewModel.isExistsSuchTask(name: task.name) {
+                completion(.failure(.duplicate))
+                return
+            }
+            
+            self.viewModel.addNewTaskToCoreData(task: task)
+            completion(.success(()))
+        }
+        
+        navigationController?.pushViewController(viewController, animated: true)
     }
     
     private func addSubviewsAndSetupAllViews() {
@@ -224,8 +253,7 @@ final class TasksListViewController: UIViewController, LoadingPresentable, UISea
     }
     
     private func reloadDataInTableAfterChangingsInCoreData() {
-        viewModel.loadDataFromCoreDate()
-        updateCountOfTasks()
+        updateCountOfTasks() 
         tableViewWithTasks.reloadData()
     }
     
@@ -235,13 +263,13 @@ final class TasksListViewController: UIViewController, LoadingPresentable, UISea
     
 }
 
-extension TasksListViewController: TaskStoreDelegate {
+extension TaskListViewController: TaskStoreDelegate {
     func store(_ store: TaskStore, didUpdate: StoreUpdate) {
         reloadDataInTableAfterChangingsInCoreData()
     }
 }
 
-extension TasksListViewController: UITableViewDataSource, UITableViewDelegate {
+extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         self.viewModel.listOfTasks.count
     }

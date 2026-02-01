@@ -37,6 +37,7 @@ final class BaseFetchedResultsControllerDelegate<Update: StoreUpdateProtocol>: N
     }
     
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        print("🔔 FRC didChangeContent")
         let update = Update(
             insertedIndexes: insertedIndexes ?? [],
             deletedIndexes: deletedIndexes ?? [],

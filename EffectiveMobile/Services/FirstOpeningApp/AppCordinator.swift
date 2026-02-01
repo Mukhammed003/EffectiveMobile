@@ -19,7 +19,7 @@ final class AppCoordinator {
     func start() {
         let taskListViewModel = TaskListViewModel(taskStore: taskStore)
         
-        let rootVc = TasksListViewController(viewModel: taskListViewModel)
+        let rootVc = TaskListViewController(viewModel: taskListViewModel)
         let navVc = UINavigationController(rootViewController: rootVc)
         
         let titleOfNavBarOnTasksPage = NSLocalizedString("trackers.header.title", comment: "")

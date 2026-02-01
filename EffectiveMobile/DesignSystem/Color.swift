@@ -31,5 +31,7 @@ extension UIColor {
     static let semiLightWhiteForText = whiteForText.withAlphaComponent(0.5)
     static let yellowForButtons = UIColor(hexString: "#FED702")
     static let grayForUnselectedButtons = UIColor(hexString: "#4D555E")
+    static let redForCancelButton = UIColor(hexString: "#F56B6C")
+    static let grayForCreateButton = UIColor(hexString: "#AEAFB4")
 }
 

@@ -97,6 +97,21 @@ final class TaskStore: NSObject {
         }
     }
     
+    func getTheGreatestTaskId() -> Int16 {
+        let request: NSFetchRequest<TaskCoreData> = TaskCoreData.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        request.fetchLimit = 1
+        
+        let result = try? context.fetch(request)
+        return (result?.first?.id ?? 0) + 1
+    }
+    
+    func isExistsSuchTrackerInCategory(withName: String) -> Bool {
+        guard let tasks = fetchedResultController?.fetchedObjects else { return false }
+
+        return tasks.contains { $0.name == withName }
+    }
+    
     private func task(taskCoreData: TaskCoreData) throws -> SingleTask {
         guard let name = taskCoreData.name else {
             throw TaskStoreError.decodingErrorInvalidName

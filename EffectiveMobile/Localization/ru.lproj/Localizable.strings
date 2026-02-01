@@ -1,3 +1,16 @@
-//TasksListViewController
+//TaskListViewController
 "tasks.header.title" = "Задачи";
 "tasks.searchField.placeholder" = "Search";
+
+//TaskViewController
+"task.titleOfTask.placeholder" = "Введите название";
+"task.descriptionOfTask.placeholder" = "Здесь описание";
+"task.createButton.title" = "Создать";
+"task.cancelButton.title" = "Отменить";
+"task.errorAlert.title" = "Ошибка";
+"task.errorAlert.buttonText" = "ОК";
+"task.errorAlert.message" = "Такая задача уже существует.";
+
+//Navigation items
+"navigationItem.backButton.title" = "Назад";
+
