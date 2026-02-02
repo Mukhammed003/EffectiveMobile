@@ -67,6 +67,12 @@ final class TaskStore: NSObject {
     }
     
     func addNewTask(taskForCoreData: SingleTask) {
+        let trimmedName = taskForCoreData.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            assertionFailure("Task name is empty")
+            return
+        }
+        
         let task = TaskCoreData(context: context)
         
         task.id = taskForCoreData.id
@@ -110,6 +116,27 @@ final class TaskStore: NSObject {
         guard let tasks = fetchedResultController?.fetchedObjects else { return false }
 
         return tasks.contains { $0.name == withName }
+    }
+    
+    func updateTaskData(task: SingleTask) {
+        let request: NSFetchRequest<TaskCoreData> = TaskCoreData.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %d", task.id)
+        request.fetchLimit = 1
+        
+        do {
+            if let existingTask = try context.fetch(request).first {
+                existingTask.name = task.name
+                existingTask.descriptionText = task.descriptionText
+                existingTask.status = task.status
+                existingTask.date = task.date
+                
+                saveContext()
+            } else {
+                assertionFailure("Task with id \(task.id) not found")
+            }
+        } catch {
+            print("Failed to fetch task for update:", error)
+        }
     }
     
     private func task(taskCoreData: TaskCoreData) throws -> SingleTask {

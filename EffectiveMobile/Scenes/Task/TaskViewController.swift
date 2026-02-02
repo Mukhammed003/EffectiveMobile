@@ -3,6 +3,7 @@ import UIKit
 final class TaskViewController: UIViewController {
     
     var onCreate: ((SingleTask, @escaping (Result<Void, TreckerCreationError>) -> Void) -> Void)?
+    var onEdit: ((SingleTask, @escaping (Result<Void, TreckerCreationError>) -> Void) -> Void)?
     
     private let viewModel: TaskViewModel
     
@@ -104,19 +105,51 @@ final class TaskViewController: UIViewController {
     }
     
     @objc private func createButtonClicked() {
-        let task = SingleTask(
-            id: viewModel.newTaskId,
-            name: titleOfTaskTextField.text ?? "",
-            descriptionText: descriptionOfTaskTextView.text ?? "",
-            status: false, 
-            date: Date())
+        let textOfButtonOnErrorAlert = NSLocalizedString("task.errorAlert.buttonText", comment: "")
+        let titleOfErrorAlert = NSLocalizedString("task.errorAlert.title", comment: "")
         
-        onCreate?(task) { [weak self] result in
-            switch result {
-            case .success(_):
-                self?.navigationController?.popViewController(animated: true)
-            case .failure(_):
-                self?.showDuplicateAlert()
+        switch viewModel.taskMode {
+        case .add:
+            let task = SingleTask(
+                id: viewModel.newTaskId,
+                name: titleOfTaskTextField.text ?? "",
+                descriptionText: descriptionOfTaskTextView.text ?? "",
+                status: false,
+                date: Date())
+            
+            onCreate?(task) { [weak self] result in
+                switch result {
+                case .success(_):
+                    self?.navigationController?.popViewController(animated: true)
+                case .failure(_):
+                    let messageOfErrorAlert = NSLocalizedString("task.errorAlert.message.onCreate", comment: "")
+                    
+                    self?.showDuplicateAlert(
+                        titleOfErrorAlert: titleOfErrorAlert,
+                        messageOfErrorAlert: messageOfErrorAlert,
+                        textOfButtonOnErrorAlert: textOfButtonOnErrorAlert)
+                }
+            }
+        case .edit(let task):
+            let updatedTask = SingleTask(
+                id: task.id,
+                name: titleOfTaskTextField.text ?? "",
+                descriptionText: descriptionOfTaskTextView.text ?? "",
+                status: task.status,
+                date: task.date)
+            
+            onEdit?(updatedTask) { [weak self] result in
+                switch result {
+                case .success(_):
+                    self?.navigationController?.popViewController(animated: true)
+                case .failure(_):
+                    let messageOfErrorAlert = NSLocalizedString("task.errorAlert.message.onEdit", comment: "")
+                    
+                    self?.showDuplicateAlert(
+                        titleOfErrorAlert: titleOfErrorAlert,
+                        messageOfErrorAlert: messageOfErrorAlert,
+                        textOfButtonOnErrorAlert: textOfButtonOnErrorAlert)
+                }
             }
         }
     }
@@ -130,16 +163,23 @@ final class TaskViewController: UIViewController {
             dateOfTaskLabel.text = Constants.dayMonthYear.string(from: Date())
             
             createButton.isHidden = false
-            
             updateCreateButtonState()
             
         case .edit(let task):
+            let textForSaveButton = NSLocalizedString("task.saveButton.title", comment: "")
             
             titleOfTaskTextField.text = task.name
             descriptionOfTaskTextView.text = task.descriptionText
             dateOfTaskLabel.text = Constants.dayMonthYear.string(from: task.date)
             
-            placeholderOfDescriptionField.isHidden = true
+            createButton.isHidden = false
+            createButton.setTitle(textForSaveButton, for: .normal)
+            
+            viewModel.isDescriptionFieldFilled = !task.descriptionText.isEmpty
+            placeholderOfDescriptionField.isHidden = !task.descriptionText.isEmpty
+            viewModel.isTitleFieldFilled = true
+            
+            updateCreateButtonState()
             
         }
     }
@@ -190,11 +230,7 @@ final class TaskViewController: UIViewController {
         }
     }
     
-    private func showDuplicateAlert() {
-        
-        let titleOfErrorAlert = NSLocalizedString("task.errorAlert.title", comment: "")
-        let messageOfErrorAlert = NSLocalizedString("task.errorAlert.message", comment: "")
-        let textOfButtonOnErrorAlert = NSLocalizedString("task.errorAlert.buttonText", comment: "")
+    private func showDuplicateAlert(titleOfErrorAlert: String, messageOfErrorAlert: String, textOfButtonOnErrorAlert: String) {
         
         let alert = UIAlertController(
             title: titleOfErrorAlert,

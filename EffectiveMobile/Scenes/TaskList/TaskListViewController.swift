@@ -281,6 +281,40 @@ extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
         let task = self.viewModel.listOfTasks[indexPath.row]
         
         cell.configure(task: task)
+        
+        cell.menuHandler = { [weak self] contextMenuAction in
+            guard let self else { return }
+            
+            switch contextMenuAction {
+            case .edit:
+                let viewModel = TaskViewModel(taskMode: .edit(task: task))
+                viewModel.newTaskId = self.viewModel.calculateIdForNewTask()
+            
+                let viewController = TaskViewController(viewModel: viewModel)
+                
+                let backButtonTitle = NSLocalizedString("navigationItem.backButton.title", comment: "")
+                self.navigationItem.backButtonTitle = backButtonTitle
+                
+                viewController.onEdit = { [weak self] task, completion in
+                    guard let self else { return }
+                    
+                    if self.viewModel.isExistsSuchTask(name: task.name) {
+                        completion(.failure(.duplicate))
+                    }
+                    
+                    self.viewModel.updateTask(task: task)
+                    completion(.success(()))
+                }
+                
+                navigationController?.pushViewController(viewController, animated: true)
+            case .share:
+                break
+            case .delete:
+                break
+            }
+            
+        }
+        
         cell.onCompletionTask = { [weak self] in
             
         }

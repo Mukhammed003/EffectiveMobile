@@ -1,16 +1,21 @@
-//TaskListViewController
+// MARK: - TaskListViewController
 "tasks.header.title" = "Задачи";
 "tasks.searchField.placeholder" = "Search";
 
-//TaskViewController
+// MARK: - TaskViewController
 "task.titleOfTask.placeholder" = "Введите название";
 "task.descriptionOfTask.placeholder" = "Здесь описание";
 "task.createButton.title" = "Создать";
-"task.cancelButton.title" = "Отменить";
+"task.saveButton.title" = "Сохранить";
 "task.errorAlert.title" = "Ошибка";
 "task.errorAlert.buttonText" = "ОК";
-"task.errorAlert.message" = "Такая задача уже существует.";
+"task.errorAlert.message.onCreate" = "Такая задача уже существует.";
+"task.errorAlert.message.onEdit" = "Такая задача уже существует. \n Измените название.";
 
-//Navigation items
+// MARK: - Navigation items
 "navigationItem.backButton.title" = "Назад";
 
+// MARK: - Context Menu
+"contextMenu.editSection.text" = "Редактировать";
+"contextMenu.deleteSection.text" = "Удалить";
+"contextMenu.shareSection.text" = "Поделиться";

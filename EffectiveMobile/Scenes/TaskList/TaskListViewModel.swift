@@ -20,4 +20,8 @@ final class TaskListViewModel {
     func isExistsSuchTask(name: String) -> Bool {
         taskStore.isExistsSuchTrackerInCategory(withName: name)
     }
+    
+    func updateTask(task: SingleTask) {
+        taskStore.updateTaskData(task: task)
+    }
 }
