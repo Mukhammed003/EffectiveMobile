@@ -139,6 +139,24 @@ final class TaskStore: NSObject {
         }
     }
     
+    func deleteTask(taskId: Int16) {
+        let request: NSFetchRequest<TaskCoreData> = TaskCoreData.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %d", taskId)
+        request.fetchLimit = 1
+        
+        do {
+            if let existingTask = try context.fetch(request).first {
+                context.delete(existingTask)
+                
+                saveContext()
+            } else {
+                assertionFailure("Task with id \(taskId) not found")
+            }
+        } catch {
+            print("Failed to fetch task for delete:", error)
+        }
+    }
+    
     private func task(taskCoreData: TaskCoreData) throws -> SingleTask {
         guard let name = taskCoreData.name else {
             throw TaskStoreError.decodingErrorInvalidName

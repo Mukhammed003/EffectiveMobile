@@ -1,6 +1,7 @@
 // MARK: - TaskListViewController
 "tasks.header.title" = "Задачи";
 "tasks.searchField.placeholder" = "Search";
+"tasks.deleteAlert.title" = "Уверены что хотите удалить задачу?";
 
 // MARK: - TaskViewController
 "task.titleOfTask.placeholder" = "Введите название";
@@ -19,3 +20,7 @@
 "contextMenu.editSection.text" = "Редактировать";
 "contextMenu.deleteSection.text" = "Удалить";
 "contextMenu.shareSection.text" = "Поделиться";
+
+// MARK: - Delete Alert
+"deleteAlert.deleteButton.text" = "Удалить";
+"deleteAlert.cancelButton.text" = "Отменить";

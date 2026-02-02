@@ -24,4 +24,8 @@ final class TaskListViewModel {
     func updateTask(task: SingleTask) {
         taskStore.updateTaskData(task: task)
     }
+    
+    func deleteTask(taskId: Int16) {
+        taskStore.deleteTask(taskId: taskId)
+    }
 }

@@ -261,6 +261,44 @@ final class TaskListViewController: UIViewController, LoadingPresentable, UISear
         countOfTasksLabel.text = "\(viewModel.listOfTasks.count) Задач"
     }
     
+    private func shareTask(task: SingleTask) {
+        let activity = UIActivityViewController(activityItems: [task.name], applicationActivities: nil)
+        present(activity, animated: true, completion: nil)
+    }
+    
+    private func showDeleteAlert(for taskId: Int16) {
+        let titleOfDeleteAlert = NSLocalizedString("tasks.deleteAlert.title", comment: "")
+        let textOfDeleteButton = NSLocalizedString("deleteAlert.deleteButton.text", comment: "")
+        let textOfCancelButton = NSLocalizedString("deleteAlert.cancelButton.text", comment: "")
+        
+        let alert = UIAlertController(
+            title: titleOfDeleteAlert,
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+        
+        let deleteAction = UIAlertAction(title: textOfDeleteButton, style: .destructive) { [weak self] _ in
+            self?.viewModel.deleteTask(taskId: taskId)
+        }
+        
+        let cancelAction = UIAlertAction(title: textOfCancelButton, style: .cancel)
+        
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = self.view
+            popover.sourceRect = CGRect(
+                x: self.view.bounds.midX,
+                y: self.view.bounds.midY,
+                width: 0,
+                height: 0
+            )
+            popover.permittedArrowDirections = []
+        }
+        
+        present(alert, animated: true)
+    }
 }
 
 extension TaskListViewController: TaskStoreDelegate {
@@ -308,11 +346,10 @@ extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
                 
                 navigationController?.pushViewController(viewController, animated: true)
             case .share:
-                break
+                shareTask(task: task)
             case .delete:
-                break
+                showDeleteAlert(for: task.id)
             }
-            
         }
         
         cell.onCompletionTask = { [weak self] in
