@@ -3,6 +3,9 @@ final class TaskListViewModel {
     var listOfTasks: [SingleTask] {
         taskStore.getAllTasks()
     }
+    var needTasksForSelector: [SingleTask] = []
+    
+    var isSearching = false
     let taskStore: TaskStore
     
     init(taskStore: TaskStore) {

@@ -10,7 +10,7 @@ protocol LoadingPresentable: AnyObject {
     func showError(retryAction: @escaping () -> Void)
 }
 
-final class TaskListViewController: UIViewController, LoadingPresentable, UISearchResultsUpdating {
+final class TaskListViewController: UIViewController, LoadingPresentable {
     
     private let viewModel: TaskListViewModel
     
@@ -25,6 +25,8 @@ final class TaskListViewController: UIViewController, LoadingPresentable, UISear
         
         let textField = searchController.searchBar.searchTextField
         textField.backgroundColor = .forSearchFieldBackground
+        textField.textColor = .semiLightWhiteForText
+        textField.clearButtonMode = .never
         
         textField.attributedPlaceholder = NSAttributedString(
             string: placeholderOfSearchField,
@@ -131,10 +133,7 @@ final class TaskListViewController: UIViewController, LoadingPresentable, UISear
         super.viewWillAppear(animated)
         
         navigationController?.navigationBar.prefersLargeTitles = true
-    }
-    
-    func updateSearchResults(for searchController: UISearchController) {
-        //TODO: Make search logic
+        searchField.searchBar.searchTextField.textColor = .semiLightWhiteForText
     }
     
     func showLoader() {
@@ -301,6 +300,24 @@ final class TaskListViewController: UIViewController, LoadingPresentable, UISear
     }
 }
 
+extension TaskListViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        guard let searchText = searchController.searchBar.text else { return }
+        
+        if searchText.isEmpty {
+            viewModel.isSearching = false
+            viewModel.needTasksForSelector = []
+        } else {
+            viewModel.isSearching = true
+            viewModel.needTasksForSelector = viewModel.listOfTasks.filter {
+                $0.name.lowercased().contains(searchText.lowercased())
+            }
+        }
+        
+        tableViewWithTasks.reloadData()
+    }
+}
+
 extension TaskListViewController: TaskStoreDelegate {
     func store(_ store: TaskStore, didUpdate: StoreUpdate) {
         reloadDataInTableAfterChangingsInCoreData()
@@ -309,14 +326,18 @@ extension TaskListViewController: TaskStoreDelegate {
 
 extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        self.viewModel.listOfTasks.count
+        self.viewModel.isSearching
+        ? self.viewModel.needTasksForSelector.count
+        : self.viewModel.listOfTasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         guard let cell = tableView.dequeueReusableCell(withIdentifier: TaskTableViewCell.reusedIdentifier, for: indexPath) as? TaskTableViewCell else { return UITableViewCell() }
         
-        let task = self.viewModel.listOfTasks[indexPath.row]
+        let task = self.viewModel.isSearching
+        ? self.viewModel.needTasksForSelector[indexPath.row]
+        : self.viewModel.listOfTasks[indexPath.row]
         
         cell.configure(task: task)
         
