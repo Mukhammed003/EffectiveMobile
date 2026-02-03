@@ -304,17 +304,23 @@ extension TaskListViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         guard let searchText = searchController.searchBar.text else { return }
         
-        if searchText.isEmpty {
-            viewModel.isSearching = false
-            viewModel.needTasksForSelector = []
-        } else {
-            viewModel.isSearching = true
-            viewModel.needTasksForSelector = viewModel.listOfTasks.filter {
-                $0.name.lowercased().contains(searchText.lowercased())
+        DispatchQueue.global(qos: .userInitiated).async {
+            let filtered: [SingleTask]
+            
+            if searchText.isEmpty {
+                filtered = []
+            } else {
+                filtered = self.viewModel.listOfTasks.filter {
+                    $0.name.lowercased().contains(searchText.lowercased())
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self.viewModel.isSearching = !searchText.isEmpty
+                self.viewModel.needTasksForSelector = filtered
+                self.tableViewWithTasks.reloadData()
             }
         }
-        
-        tableViewWithTasks.reloadData()
     }
 }
 

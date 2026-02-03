@@ -17,6 +17,7 @@ protocol TaskStoreDelegate: AnyObject {
 }
 
 final class TaskStore: NSObject {
+    private let persistentContainer: NSPersistentContainer
     private let context: NSManagedObjectContext
     private var fetchedResultController: NSFetchedResultsController<TaskCoreData>?
     
@@ -24,46 +25,21 @@ final class TaskStore: NSObject {
     private var frcDelegate: BaseFetchedResultsControllerDelegate<StoreUpdate>?
     
     convenience override init() {
-        let context: NSManagedObjectContext
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+            fatalError("AppDelegate not found")
+        }
         
-        if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
-            context = appDelegate.persistentContainer.viewContext
-        } else {
-            context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-            print("⚠️ Не удалось получить AppDelegate. Используется fallback context (TaskStore)") }
-        self.init(context: context)
+        self.init(persistentContainer: appDelegate.persistentContainer)
     }
     
-    init(context: NSManagedObjectContext) {
-        self.context = context
+    init(persistentContainer: NSPersistentContainer) {
+        self.persistentContainer = persistentContainer
+        self.context = persistentContainer.viewContext
         super.init()
         
-        let fetchRequest = TaskCoreData.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \TaskCoreData.id, ascending: true)]
-        let controller = NSFetchedResultsController(
-            fetchRequest: fetchRequest,
-            managedObjectContext: context,
-            sectionNameKeyPath: nil,
-            cacheName: nil
-        )
+        context.automaticallyMergesChangesFromParent = true
         
-        let delegate = BaseFetchedResultsControllerDelegate<StoreUpdate>(
-            ownerName: "TaskStore"
-        ) { [weak self] update in
-            guard let self else { return }
-            self.delegate?.store(self, didUpdate: update)
-        }
-        
-        controller.delegate = delegate
-        frcDelegate = delegate
-        fetchedResultController = controller
-        
-        do {
-            try controller.performFetch()
-        }
-        catch {
-            print("⚠️ TaskStore: performFetch failed: \(error)")
-        }
+        setupFetchedResultsController()
     }
     
     func addNewTask(taskForCoreData: SingleTask) {
@@ -73,15 +49,22 @@ final class TaskStore: NSObject {
             return
         }
         
-        let task = TaskCoreData(context: context)
-        
-        task.id = taskForCoreData.id
-        task.name = taskForCoreData.name
-        task.descriptionText = taskForCoreData.descriptionText
-        task.status = taskForCoreData.status
-        task.date = taskForCoreData.date
-        
-        saveContext()
+        persistentContainer.performBackgroundTask { context in
+            let task = TaskCoreData(context: context)
+            
+            task.id = taskForCoreData.id
+            task.name = taskForCoreData.name
+            task.descriptionText = taskForCoreData.descriptionText
+            task.status = taskForCoreData.status
+            task.date = taskForCoreData.date
+            
+            do {
+                try context.save()
+            } catch {
+                context.rollback()
+                assertionFailure("Failed to save task: \(error)")
+            }
+        }
     }
     
     func getAllTasks() -> [SingleTask] {
@@ -119,55 +102,95 @@ final class TaskStore: NSObject {
     }
     
     func updateTaskData(task: SingleTask) {
-        let request = createRequestForSearchById(taskId: task.id)
-        
-        do {
-            if let existingTask = try context.fetch(request).first {
-                existingTask.name = task.name
-                existingTask.descriptionText = task.descriptionText
-                existingTask.status = task.status
-                existingTask.date = task.date
-                
-                saveContext()
-            } else {
-                assertionFailure("Task with id \(task.id) not found")
+        persistentContainer.performBackgroundTask { context in
+            let request = self.createRequestForSearchById(taskId: task.id)
+            
+            do {
+                if let existingTask = try context.fetch(request).first {
+                    existingTask.name = task.name
+                    existingTask.descriptionText = task.descriptionText
+                    existingTask.status = task.status
+                    existingTask.date = task.date
+                    
+                    try context.save()
+                } else {
+                    assertionFailure("Task with id \(task.id) not found")
+                }
+            } catch {
+                context.rollback()
+                print("Failed to fetch task for update:", error)
             }
-        } catch {
-            print("Failed to fetch task for update:", error)
         }
     }
     
     func deleteTask(taskId: Int16) {
-        let request = createRequestForSearchById(taskId: taskId)
-        
-        do {
-            if let existingTask = try context.fetch(request).first {
-                context.delete(existingTask)
-                
-                saveContext()
-            } else {
-                assertionFailure("Task with id \(taskId) not found")
+        persistentContainer.performBackgroundTask { context in
+            let request = self.createRequestForSearchById(taskId: taskId)
+            
+            do {
+                if let existingTask = try context.fetch(request).first {
+                    context.delete(existingTask)
+                    
+                    try context.save()
+                } else {
+                    assertionFailure("Task with id \(taskId) not found")
+                }
+            } catch {
+                context.rollback()
+                print("Failed to fetch task for delete:", error)
             }
-        } catch {
-            print("Failed to fetch task for delete:", error)
         }
     }
     
     func changeStatusOfTask(taskId: Int16) {
-        let request = createRequestForSearchById(taskId: taskId)
-        
-        do {
-            if let existingTask = try context.fetch(request).first {
-                existingTask.status.toggle()
-                
-                saveContext()
-            } else {
-                assertionFailure("Task with id \(taskId) not found")
+        persistentContainer.performBackgroundTask { context in
+            let request = self.createRequestForSearchById(taskId: taskId)
+            
+            do {
+                if let existingTask = try context.fetch(request).first {
+                    existingTask.status.toggle()
+                    
+                    try context.save()
+                } else {
+                    assertionFailure("Task with id \(taskId) not found")
+                }
+            } catch {
+                context.rollback()
+                print("Failed to fetch task for delete:", error)
             }
-        } catch {
-            print("Failed to fetch task for delete:", error)
         }
     }
+    
+    private func setupFetchedResultsController() {
+            let fetchRequest = TaskCoreData.fetchRequest()
+            fetchRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \TaskCoreData.id, ascending: true)
+            ]
+
+            let controller = NSFetchedResultsController(
+                fetchRequest: fetchRequest,
+                managedObjectContext: context,
+                sectionNameKeyPath: nil,
+                cacheName: nil
+            )
+
+            let delegate = BaseFetchedResultsControllerDelegate<StoreUpdate>(
+                ownerName: "TaskStore"
+            ) { [weak self] update in
+                guard let self else { return }
+                self.delegate?.store(self, didUpdate: update)
+            }
+
+            controller.delegate = delegate
+            frcDelegate = delegate
+            fetchedResultController = controller
+
+            do {
+                try controller.performFetch()
+            } catch {
+                print("⚠️ TaskStore: performFetch failed: \(error)")
+            }
+        }
     
     private func createRequestForSearchById(taskId: Int16) -> NSFetchRequest<TaskCoreData> {
         let request: NSFetchRequest<TaskCoreData> = TaskCoreData.fetchRequest()
@@ -196,15 +219,5 @@ final class TaskStore: NSObject {
             descriptionText: descriptionText,
             status: taskCoreData.status,
             date: date)
-    }
-    
-    private func saveContext() {
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                context.rollback()
-            }
-        }
     }
 }
