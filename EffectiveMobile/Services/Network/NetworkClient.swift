@@ -1,11 +1,15 @@
 import Foundation
 
+// MARK: - Network Client
+
 enum NetworkClientError: Error {
     case httpStatusCode(Int)
     case urlRequestError(Error)
     case urlSessionError
     case parsingError
 }
+
+// MARK: - Network Client Protocol
 
 protocol NetworkClient {
     @discardableResult
@@ -19,6 +23,8 @@ protocol NetworkClient {
                             completionQueue: DispatchQueue,
                             onResponse: @escaping (Result<T, Error>) -> Void) -> NetworkTask?
 }
+
+// MARK: - Default Implementations
 
 extension NetworkClient {
 
@@ -36,10 +42,15 @@ extension NetworkClient {
     }
 }
 
+// MARK: - Default Network Client
+
 struct DefaultNetworkClient: NetworkClient {
+    
     private let session: URLSession
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
+
+    // MARK: - Initialization
 
     init(session: URLSession = URLSession.shared,
          decoder: JSONDecoder = JSONDecoder(),
@@ -48,6 +59,8 @@ struct DefaultNetworkClient: NetworkClient {
         self.decoder = decoder
         self.encoder = encoder
     }
+
+    // MARK: - Send Data
 
     @discardableResult
     func send(
@@ -90,6 +103,8 @@ struct DefaultNetworkClient: NetworkClient {
         return DefaultNetworkTask(dataTask: task)
     }
 
+    // MARK: - Send Decodable
+
     @discardableResult
     func send<T: Decodable>(
         request: NetworkRequest,
@@ -107,7 +122,7 @@ struct DefaultNetworkClient: NetworkClient {
         }
     }
 
-    // MARK: - Private
+    // MARK: - Private Methods
 
     private func create(request: NetworkRequest) -> URLRequest? {
         guard let endpoint = request.endpoint else {
@@ -124,7 +139,7 @@ struct DefaultNetworkClient: NetworkClient {
                 URLQueryItem(
                     name: field.key,
                     value: field.value
-                    )
+                )
             }
             urlComponents.queryItems = queryItems
             urlRequest.httpBody = urlComponents.query?.data(using: .utf8)
@@ -142,4 +157,3 @@ struct DefaultNetworkClient: NetworkClient {
         }
     }
 }
-

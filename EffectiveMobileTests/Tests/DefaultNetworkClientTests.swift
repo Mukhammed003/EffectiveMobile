@@ -1,16 +1,22 @@
+// MARK: - DefaultNetworkClient Tests
+
+// MARK: - Imports
 import XCTest
 @testable import EffectiveMobile
 
+// MARK: - DefaultNetworkClientTests
 final class DefaultNetworkClientTests: XCTestCase {
 
+    // MARK: - Properties
     private var client: DefaultNetworkClient!
     private var session: URLSession!
 
+    // MARK: - Setup / Teardown
     override func setUp() {
         super.setUp()
 
         let config = URLSessionConfiguration.ephemeral
-        config.protocolClasses = [MockURLProtocol.self] 
+        config.protocolClasses = [MockURLProtocol.self]
         session = URLSession(configuration: config)
         client = DefaultNetworkClient(session: session)
     }
@@ -23,7 +29,10 @@ final class DefaultNetworkClientTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Tests
+
     func testSend_Success() {
+        // MARK: - Given
         let expectedData = "{\"test\":1}".data(using: .utf8)
         MockURLProtocol.stubResponseData = expectedData
         MockURLProtocol.responseError = nil
@@ -31,7 +40,10 @@ final class DefaultNetworkClientTests: XCTestCase {
         let expectation = self.expectation(description: "Completion called")
 
         let request = MockRequest()
+
+        // MARK: - When
         _ = client.send(request: request) { result in
+            // MARK: - Then
             switch result {
             case .success(let data):
                 XCTAssertEqual(data, expectedData)
@@ -45,13 +57,16 @@ final class DefaultNetworkClientTests: XCTestCase {
     }
 
     func testSend_Failure() {
+        // MARK: - Given
         MockURLProtocol.stubResponseData = nil
         MockURLProtocol.responseError = NSError(domain: "Test", code: 1)
 
         let expectation = self.expectation(description: "Completion called")
-
         let request = MockRequest()
+
+        // MARK: - When
         _ = client.send(request: request) { result in
+            // MARK: - Then
             switch result {
             case .success:
                 XCTFail("Expected failure")
@@ -65,15 +80,14 @@ final class DefaultNetworkClientTests: XCTestCase {
     }
 }
 
-// MARK: - Mocks
-
+// MARK: - Mock Request
 private class MockRequest: NetworkRequest {
     var endpoint: URL? { URL(string: "https://mock.test") }
     var httpMethod: HttpMethod { .get }
     var dto: Dto? { nil }
 }
 
-// URLProtocol mock
+// MARK: - Mock URL Protocol
 private class MockURLProtocol: URLProtocol {
 
     static var stubResponseData: Data?
@@ -86,7 +100,6 @@ private class MockURLProtocol: URLProtocol {
         if let error = MockURLProtocol.responseError {
             client?.urlProtocol(self, didFailWithError: error)
         } else {
-            // Отправляем корректный HTTPURLResponse
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 200,
@@ -106,4 +119,3 @@ private class MockURLProtocol: URLProtocol {
 
     override func stopLoading() {}
 }
-

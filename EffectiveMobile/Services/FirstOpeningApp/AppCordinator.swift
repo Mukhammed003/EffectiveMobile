@@ -1,11 +1,17 @@
 import UIKit
 
+// MARK: - App Coordinator
+
 final class AppCoordinator {
+
+    // MARK: - Properties
 
     private let window: UIWindow
     private let servicesAssembly: ServicesAssembly
     private let firstLaunchService: FirstLaunchService
     private let taskStore: TaskStore
+
+    // MARK: - Initialization
 
     init(window: UIWindow, servicesAssembly: ServicesAssembly, taskStore: TaskStore) {
         self.window = window
@@ -16,6 +22,8 @@ final class AppCoordinator {
             taskStore: taskStore
         )
     }
+
+    // MARK: - Start Coordinator
 
     func start() {
         let taskListViewModel = TaskListViewModel(taskStore: taskStore)

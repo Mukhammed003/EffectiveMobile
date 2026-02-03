@@ -1,3 +1,26 @@
-//TasksListViewController
+// MARK: - TaskListViewController
 "tasks.header.title" = "Tasks";
 "tasks.searchField.placeholder" = "Search";
+"tasks.deleteAlert.title" = "Are you sure you want to delete this task?";
+
+// MARK: - TaskViewController
+"task.titleOfTask.placeholder" = "Enter title";
+"task.descriptionOfTask.placeholder" = "Description";
+"task.createButton.title" = "Create";
+"task.saveButton.title" = "Save";
+"task.errorAlert.title" = "Error";
+"task.errorAlert.buttonText" = "OK";
+"task.errorAlert.message.onCreate" = "This task already exists.";
+"task.errorAlert.message.onEdit" = "This task already exists.\nPlease change the title.";
+
+// MARK: - Navigation items
+"navigationItem.backButton.title" = "Back";
+
+// MARK: - Context Menu
+"contextMenu.editSection.text" = "Edit";
+"contextMenu.deleteSection.text" = "Delete";
+"contextMenu.shareSection.text" = "Share";
+
+// MARK: - Delete Alert
+"deleteAlert.deleteButton.text" = "Delete";
+"deleteAlert.cancelButton.text" = "Cancel";

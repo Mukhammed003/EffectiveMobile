@@ -1,16 +1,24 @@
+// MARK: - Task List View Model
+
 final class TaskListViewModel {
+    
+    // MARK: - Properties
     
     var listOfTasks: [SingleTask] {
         taskStore.getAllTasks()
     }
-    var needTasksForSelector: [SingleTask] = []
     
+    var needTasksForSelector: [SingleTask] = []
     var isSearching = false
     let taskStore: TaskStore
+    
+    // MARK: - Initialization
     
     init(taskStore: TaskStore) {
         self.taskStore = taskStore
     }
+    
+    // MARK: - Task Operations
     
     func addNewTaskToCoreData(task: SingleTask) {
         taskStore.addNewTask(taskForCoreData: task)

@@ -1,11 +1,15 @@
+// MARK: - Imports
 import XCTest
 @testable import EffectiveMobile
 
+// MARK: - TaskServiceImpl Tests
 final class TaskServiceImplTests: XCTestCase {
 
+    // MARK: - Properties
     private var service: TaskServiceImpl!
     private var mockNetworkClient: MockNetworkClient!
 
+    // MARK: - Setup & Teardown
     override func setUp() {
         super.setUp()
         mockNetworkClient = MockNetworkClient()
@@ -18,12 +22,16 @@ final class TaskServiceImplTests: XCTestCase {
         super.tearDown()
     }
 
-    func testGetUsers_Success() {
-        mockNetworkClient.shouldFail = false
+    // MARK: - Tests
 
+    func testGetUsers_Success() {
+        // MARK: - Given
+        mockNetworkClient.shouldFail = false
         let expectation = self.expectation(description: "Completion called")
 
+        // MARK: - When
         _ = service.getUsers { result in
+            // MARK: - Then
             switch result {
             case .success(let response):
                 XCTAssertEqual(response.todos.count, 2)
@@ -37,11 +45,13 @@ final class TaskServiceImplTests: XCTestCase {
     }
 
     func testGetUsers_Failure() {
+        // MARK: - Given
         mockNetworkClient.shouldFail = true
-
         let expectation = self.expectation(description: "Completion called")
 
+        // MARK: - When
         _ = service.getUsers { result in
+            // MARK: - Then
             switch result {
             case .success:
                 XCTFail("Expected failure")
@@ -55,12 +65,16 @@ final class TaskServiceImplTests: XCTestCase {
     }
 }
 
-// MARK: - Mocks
-
+// MARK: - Mock Network Client
 private class MockNetworkClient: NetworkClient {
     var shouldFail = false
 
-    func send<T>(request: NetworkRequest, type: T.Type, completionQueue: DispatchQueue, onResponse: @escaping (Result<T, Error>) -> Void) -> NetworkTask? where T : Decodable {
+    func send<T>(
+        request: NetworkRequest,
+        type: T.Type,
+        completionQueue: DispatchQueue,
+        onResponse: @escaping (Result<T, Error>) -> Void
+    ) -> NetworkTask? where T : Decodable {
         if shouldFail {
             completionQueue.async { onResponse(.failure(NSError(domain: "Test", code: 1))) }
         } else {
@@ -70,12 +84,16 @@ private class MockNetworkClient: NetworkClient {
         return nil
     }
 
-    func send(request: NetworkRequest, completionQueue: DispatchQueue, onResponse: @escaping (Result<Data, Error>) -> Void) -> NetworkTask? {
+    func send(
+        request: NetworkRequest,
+        completionQueue: DispatchQueue,
+        onResponse: @escaping (Result<Data, Error>) -> Void
+    ) -> NetworkTask? {
         return nil
     }
 }
 
-// Mock response
+// MARK: - Mock Data for TasksListForResponse
 private extension TasksListForResponse {
     static func mock() -> TasksListForResponse {
         return TasksListForResponse(todos: [

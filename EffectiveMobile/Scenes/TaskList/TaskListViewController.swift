@@ -1,8 +1,12 @@
 import UIKit
 
+// MARK: - Trecker Creation Error
+
 enum TreckerCreationError: Error {
     case duplicate
 }
+
+// MARK: - Loading Presentable Protocol
 
 protocol LoadingPresentable: AnyObject {
     func showLoader()
@@ -10,11 +14,15 @@ protocol LoadingPresentable: AnyObject {
     func showError(retryAction: @escaping () -> Void)
 }
 
+// MARK: - Task List View Controller
+
 final class TaskListViewController: UIViewController, LoadingPresentable {
     
-    private let viewModel: TaskListViewModel
+    // MARK: - Properties
     
+    private let viewModel: TaskListViewModel
     private lazy var loader = UIActivityIndicatorView(style: .large)
+    
     private lazy var searchField: UISearchController = {
         let placeholderOfSearchField = NSLocalizedString("tasks.searchField.placeholder", comment: "")
         
@@ -40,7 +48,6 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         
         let microImage = UIImage(systemName: "microphone.fill")
         let microButton = UIButton(type: .system)
-            
         microButton.setImage(microImage, for: .normal)
         microButton.addTarget(self, action: #selector(microphoneTapped), for: .touchUpInside)
         microButton.translatesAutoresizingMaskIntoConstraints = false
@@ -56,6 +63,7 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         
         return searchController
     }()
+    
     private lazy var tableViewWithTasks: UITableView = {
         let tableViewWithTasks = UITableView()
         tableViewWithTasks.delegate = self
@@ -67,13 +75,13 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         tableViewWithTasks.rowHeight = UITableView.automaticDimension
         tableViewWithTasks.estimatedRowHeight = 90
         tableViewWithTasks.translatesAutoresizingMaskIntoConstraints = false
-        
         return tableViewWithTasks
     }()
+    
     private lazy var countOfTasksLabel: UILabel = UILabel()
+    
     private lazy var footerView: UIView = {
         let footerView = UIView()
-        
         footerView.backgroundColor = .forSearchFieldBackground
         footerView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -88,7 +96,6 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         
         let addNewTaskButton = UIButton(type: .system)
         let imageForAddNewTaskButton = UIImage(resource: .createTaskButton)
-        
         addNewTaskButton.setImage(imageForAddNewTaskButton, for: .normal)
         addNewTaskButton.addTarget(self, action: #selector(addNewTaskButtonTapped), for: .touchUpInside)
         addNewTaskButton.tintColor = .yellowForButtons
@@ -110,6 +117,8 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         return footerView
     }()
     
+    // MARK: - Initialization
+    
     init(viewModel: TaskListViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -119,22 +128,23 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         nil
     }
     
+    // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .forViewBackground
-        
         viewModel.taskStore.delegate = self
-        
         addSubviewsAndSetupAllViews()
         updateCountOfTasks()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
         navigationController?.navigationBar.prefersLargeTitles = true
         searchField.searchBar.searchTextField.textColor = .semiLightWhiteForText
     }
+    
+    // MARK: - LoadingPresentable
     
     func showLoader() {
         view.isUserInteractionEnabled = false
@@ -147,22 +157,15 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
     }
     
     func showError(retryAction: @escaping () -> Void) {
-        let repeatAction = UIAlertAction(title: "Повторить", style: .default) { _ in
-            retryAction()
-        }
+        let repeatAction = UIAlertAction(title: "Повторить", style: .default) { _ in retryAction() }
         let cancelAction = UIAlertAction(title: "Отменить", style: .cancel)
-        
-        let alert = UIAlertController(
-            title: "Ошибка во время загрузки данных",
-            message: nil,
-            preferredStyle: .alert
-        )
-        
+        let alert = UIAlertController(title: "Ошибка во время загрузки данных", message: nil, preferredStyle: .alert)
         alert.addAction(repeatAction)
         alert.addAction(cancelAction)
-        
         present(alert, animated: true)
     }
+    
+    // MARK: - Actions
     
     @objc private func microphoneTapped() {
         print("Микрофон нажат")
@@ -173,17 +176,14 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         viewModel.newTaskId = self.viewModel.calculateIdForNewTask()
         let viewController = TaskViewController(viewModel: viewModel)
         let backButtonTitle = NSLocalizedString("navigationItem.backButton.title", comment: "")
-        
         self.navigationItem.backButtonTitle = backButtonTitle
         
         viewController.onCreate = { [weak self] task, completion in
             guard let self else { return }
-            
             if self.viewModel.isExistsSuchTask(name: task.name) {
                 completion(.failure(.duplicate))
                 return
             }
-            
             self.viewModel.addNewTaskToCoreData(task: task)
             completion(.success(()))
         }
@@ -191,11 +191,10 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         navigationController?.pushViewController(viewController, animated: true)
     }
     
+    // MARK: - Private Methods
+    
     private func addSubviewsAndSetupAllViews() {
-        [loader, tableViewWithTasks, footerView].forEach {
-            view.addSubview($0)
-        }
-        
+        [loader, tableViewWithTasks, footerView].forEach { view.addSubview($0) }
         setupConstraints()
         setupLoader()
         setupNavBar()
@@ -203,7 +202,6 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            
             tableViewWithTasks.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableViewWithTasks.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             tableViewWithTasks.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
@@ -213,7 +211,6 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
             footerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             footerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             footerView.heightAnchor.constraint(equalToConstant: 83)
-            
         ])
     }
     
@@ -221,7 +218,6 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         loader.translatesAutoresizingMaskIntoConstraints = false
         loader.hidesWhenStopped = true
         loader.color = .whiteForText
-        
         NSLayoutConstraint.activate([
             loader.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loader.centerYAnchor.constraint(equalTo: view.centerYAnchor)
@@ -233,26 +229,19 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = .forViewBackground
-
-        appearance.largeTitleTextAttributes = [
-            .foregroundColor: UIColor.whiteForText
-        ]
-
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.whiteForText]
         navigationController?.navigationBar.standardAppearance = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
         navigationController?.navigationBar.compactAppearance = appearance
-        
         navigationController?.navigationBar.prefersLargeTitles = true
-        
         navigationItem.searchController = searchField
         navigationItem.hidesSearchBarWhenScrolling = true
         navigationItem.largeTitleDisplayMode = .always
-        
         navigationItem.title = titleText
     }
     
     private func reloadDataInTableAfterChangingsInCoreData() {
-        updateCountOfTasks() 
+        updateCountOfTasks()
         tableViewWithTasks.reloadData()
     }
     
@@ -270,35 +259,25 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         let textOfDeleteButton = NSLocalizedString("deleteAlert.deleteButton.text", comment: "")
         let textOfCancelButton = NSLocalizedString("deleteAlert.cancelButton.text", comment: "")
         
-        let alert = UIAlertController(
-            title: titleOfDeleteAlert,
-            message: nil,
-            preferredStyle: .actionSheet
-        )
-        
+        let alert = UIAlertController(title: titleOfDeleteAlert, message: nil, preferredStyle: .actionSheet)
         let deleteAction = UIAlertAction(title: textOfDeleteButton, style: .destructive) { [weak self] _ in
             self?.viewModel.deleteTask(taskId: taskId)
         }
-        
         let cancelAction = UIAlertAction(title: textOfCancelButton, style: .cancel)
-        
         alert.addAction(deleteAction)
         alert.addAction(cancelAction)
         
         if let popover = alert.popoverPresentationController {
             popover.sourceView = self.view
-            popover.sourceRect = CGRect(
-                x: self.view.bounds.midX,
-                y: self.view.bounds.midY,
-                width: 0,
-                height: 0
-            )
+            popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
             popover.permittedArrowDirections = []
         }
         
         present(alert, animated: true)
     }
 }
+
+// MARK: - UISearchResultsUpdating
 
 extension TaskListViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
@@ -324,49 +303,43 @@ extension TaskListViewController: UISearchResultsUpdating {
     }
 }
 
+// MARK: - TaskStoreDelegate
+
 extension TaskListViewController: TaskStoreDelegate {
     func store(_ store: TaskStore, didUpdate: StoreUpdate) {
         reloadDataInTableAfterChangingsInCoreData()
     }
 }
 
+// MARK: - UITableViewDataSource & UITableViewDelegate
+
 extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        self.viewModel.isSearching
-        ? self.viewModel.needTasksForSelector.count
-        : self.viewModel.listOfTasks.count
+        viewModel.isSearching ? viewModel.needTasksForSelector.count : viewModel.listOfTasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
         guard let cell = tableView.dequeueReusableCell(withIdentifier: TaskTableViewCell.reusedIdentifier, for: indexPath) as? TaskTableViewCell else { return UITableViewCell() }
         
-        let task = self.viewModel.isSearching
-        ? self.viewModel.needTasksForSelector[indexPath.row]
-        : self.viewModel.listOfTasks[indexPath.row]
-        
+        let task = viewModel.isSearching ? viewModel.needTasksForSelector[indexPath.row] : viewModel.listOfTasks[indexPath.row]
         cell.configure(task: task)
         
         cell.menuHandler = { [weak self] contextMenuAction in
             guard let self else { return }
-            
             switch contextMenuAction {
             case .edit:
                 let viewModel = TaskViewModel(taskMode: .edit(task: task))
                 viewModel.newTaskId = self.viewModel.calculateIdForNewTask()
-            
                 let viewController = TaskViewController(viewModel: viewModel)
-                
                 let backButtonTitle = NSLocalizedString("navigationItem.backButton.title", comment: "")
                 self.navigationItem.backButtonTitle = backButtonTitle
                 
                 viewController.onEdit = { [weak self] task, completion in
                     guard let self else { return }
-                    
                     if self.viewModel.isExistsSuchTask(name: task.name) {
                         completion(.failure(.duplicate))
                     }
-                    
                     self.viewModel.updateTask(task: task)
                     completion(.success(()))
                 }
@@ -381,7 +354,6 @@ extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
         
         cell.onCompletionTask = { [weak self] in
             guard let self else { return }
-            
             self.viewModel.changeStatusOfTask(taskId: task.id)
         }
         

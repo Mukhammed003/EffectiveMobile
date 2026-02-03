@@ -1,11 +1,19 @@
 import UIKit
 
+// MARK: - TaskViewController
+
 final class TaskViewController: UIViewController {
+    
+    // MARK: - Callbacks
     
     var onCreate: ((SingleTask, @escaping (Result<Void, TreckerCreationError>) -> Void) -> Void)?
     var onEdit: ((SingleTask, @escaping (Result<Void, TreckerCreationError>) -> Void) -> Void)?
     
+    // MARK: - Dependencies
+    
     private let viewModel: TaskViewModel
+    
+    // MARK: - UI Elements
     
     private lazy var titleOfTaskTextField: UITextField = {
         let titleOfTaskTextField = UITextField()
@@ -27,6 +35,7 @@ final class TaskViewController: UIViewController {
         
         return titleOfTaskTextField
     }()
+    
     private lazy var dateOfTaskLabel: UILabel = {
         let dateOfTaskLabel = UILabel()
         dateOfTaskLabel.font = .headline5
@@ -36,7 +45,9 @@ final class TaskViewController: UIViewController {
         
         return dateOfTaskLabel
     }()
+    
     private lazy var placeholderOfDescriptionField = UILabel()
+    
     private lazy var descriptionOfTaskTextView: UITextView = {
         let descriptionOfTaskTextView = UITextView()
         let placeholder = NSLocalizedString("task.descriptionOfTask.placeholder", comment: "")
@@ -62,6 +73,7 @@ final class TaskViewController: UIViewController {
         
         return descriptionOfTaskTextView
     }()
+    
     private lazy var createButton: UIButton = {
         let createButton = UIButton(type: .system)
         let textOfCreateButton = NSLocalizedString("task.createButton.title", comment: "")
@@ -80,6 +92,8 @@ final class TaskViewController: UIViewController {
         return createButton
     }()
     
+    // MARK: - Initialization
+    
     init(viewModel: TaskViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -88,6 +102,8 @@ final class TaskViewController: UIViewController {
     required init?(coder: NSCoder) {
         nil
     }
+    
+    // MARK: - Lifecycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -103,6 +119,8 @@ final class TaskViewController: UIViewController {
         navigationController?.navigationBar.tintColor = .yellowForButtons
         navigationController?.navigationBar.prefersLargeTitles = false
     }
+    
+    // MARK: - Actions
     
     @objc private func createButtonClicked() {
         let textOfButtonOnErrorAlert = NSLocalizedString("task.errorAlert.buttonText", comment: "")
@@ -130,6 +148,7 @@ final class TaskViewController: UIViewController {
                         textOfButtonOnErrorAlert: textOfButtonOnErrorAlert)
                 }
             }
+            
         case .edit(let task):
             let updatedTask = SingleTask(
                 id: task.id,
@@ -154,10 +173,11 @@ final class TaskViewController: UIViewController {
         }
     }
     
+    // MARK: - UI State
+    
     private func showNeedViewsByMode() {
         switch viewModel.taskMode {
         case .add:
-            
             titleOfTaskTextField.text = ""
             descriptionOfTaskTextView.text = ""
             dateOfTaskLabel.text = Constants.dayMonthYear.string(from: Date())
@@ -180,9 +200,10 @@ final class TaskViewController: UIViewController {
             viewModel.isTitleFieldFilled = true
             
             updateCreateButtonState()
-            
         }
     }
+    
+    // MARK: - Layout
     
     private func addSubviews() {
         [titleOfTaskTextField, dateOfTaskLabel, descriptionOfTaskTextView, createButton].forEach {
@@ -216,6 +237,8 @@ final class TaskViewController: UIViewController {
         ])
     }
     
+    // MARK: - Button State
+    
     private func updateCreateButtonState() {
         let shouldBeActive = viewModel.isTitleFieldFilled && viewModel.isDescriptionFieldFilled
         
@@ -230,8 +253,13 @@ final class TaskViewController: UIViewController {
         }
     }
     
-    private func showDuplicateAlert(titleOfErrorAlert: String, messageOfErrorAlert: String, textOfButtonOnErrorAlert: String) {
-        
+    // MARK: - Alerts
+    
+    private func showDuplicateAlert(
+        titleOfErrorAlert: String,
+        messageOfErrorAlert: String,
+        textOfButtonOnErrorAlert: String
+    ) {
         let alert = UIAlertController(
             title: titleOfErrorAlert,
             message: messageOfErrorAlert,
@@ -242,13 +270,21 @@ final class TaskViewController: UIViewController {
     }
 }
 
+// MARK: - UITextFieldDelegate
+
 extension TaskViewController: UITextFieldDelegate {
     
     @objc private func textFieldDidChange(_ textField: UITextField) {
-        viewModel.isTitleFieldFilled = !(textField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        viewModel.isTitleFieldFilled =
+        !(textField.text?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty ?? true)
+        
         updateCreateButtonState()
     }
 }
+
+// MARK: - UITextViewDelegate
 
 extension TaskViewController: UITextViewDelegate {
     

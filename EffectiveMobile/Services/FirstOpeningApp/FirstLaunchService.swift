@@ -1,18 +1,26 @@
 import Foundation
 
+// MARK: - First Launch Service
+
 final class FirstLaunchService {
-    
+
+    // MARK: - Properties
+
     weak var presenter: LoadingPresentable?
     
     private var servicesAssembly: ServicesAssembly?
     private var taskStore: TaskStore?
     private var currentTask: NetworkTask?
-    
+
+    // MARK: - Initialization
+
     init(servicesAssembly: ServicesAssembly?, taskStore: TaskStore?) {
         self.servicesAssembly = servicesAssembly
         self.taskStore = taskStore
     }
-    
+
+    // MARK: - Public Methods
+
     func checkFirstLaunch() {
         let defaults = UserDefaults.standard
 
@@ -24,7 +32,9 @@ final class FirstLaunchService {
             loadData()
         }
     }
-    
+
+    // MARK: - Private Methods
+
     private func loadData() {
         print("Дошло")
         
@@ -80,4 +90,3 @@ final class FirstLaunchService {
         taskStore?.debugPrintAllTasks()
     }
 }
-

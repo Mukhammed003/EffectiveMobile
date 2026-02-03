@@ -1,17 +1,21 @@
-import Foundation
+// MARK: - Tasks Service Protocol
 
 protocol TasksService {
     func getUsers(completion: @escaping (Result<TasksListForResponse, Error>) -> Void) -> NetworkTask?
 }
 
+// MARK: - Tasks Service Implementation
+
 final class TaskServiceImpl: TasksService {
     
     private let networkClient: NetworkClient
 
+    // MARK: - Init
     init(networkClient: NetworkClient) {
         self.networkClient = networkClient
     }
     
+    // MARK: - TasksService
     @discardableResult
     func getUsers(completion: @escaping (Result<TasksListForResponse, any Error>) -> Void) -> NetworkTask? {
         let request = GetTasksListRequest()
@@ -19,7 +23,4 @@ final class TaskServiceImpl: TasksService {
             completion(result)
         }
     }
-    
 }
-
-

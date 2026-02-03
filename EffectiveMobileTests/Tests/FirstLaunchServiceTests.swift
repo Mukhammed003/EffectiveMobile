@@ -1,20 +1,25 @@
+// MARK: - FirstLaunchService Tests
+
+// MARK: - Imports
 import XCTest
 @testable import EffectiveMobile
 import CoreData
 
+// MARK: - FirstLaunchServiceTests
 final class FirstLaunchServiceTests: XCTestCase {
 
+    // MARK: - Properties
     private var service: FirstLaunchService!
     private var mockNetworkClient: MockNetworkClient!
     private var taskStore: TaskStore!
     private var presenter: MockPresenter!
     private var persistentContainer: NSPersistentContainer!
 
+    // MARK: - Setup / Teardown
     override func setUp() {
         super.setUp()
 
-        // 1️⃣ Создаём in-memory CoreData container
-        persistentContainer = NSPersistentContainer(name: "EffectiveMobile") // <- имя твоей модели
+        persistentContainer = NSPersistentContainer(name: "EffectiveMobile")
         let description = NSPersistentStoreDescription()
         description.type = NSInMemoryStoreType
         persistentContainer.persistentStoreDescriptions = [description]
@@ -22,17 +27,13 @@ final class FirstLaunchServiceTests: XCTestCase {
             XCTAssertNil(error)
         }
 
-        // 2️⃣ Создаём TaskStore с in-memory container
         taskStore = TaskStore(persistentContainer: persistentContainer)
 
-        // 3️⃣ Создаём мок NetworkClient
         mockNetworkClient = MockNetworkClient()
         let servicesAssembly = ServicesAssembly(networkClient: mockNetworkClient)
 
-        // 4️⃣ Создаём мок Presenter
         presenter = MockPresenter()
 
-        // 5️⃣ Создаём сервис
         service = FirstLaunchService(servicesAssembly: servicesAssembly, taskStore: taskStore)
         service.presenter = presenter
     }
@@ -46,26 +47,25 @@ final class FirstLaunchServiceTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Tests
+
     func testFirstLaunch_SuccessfulLoad() {
+        // MARK: - Given
         mockNetworkClient.shouldFail = false
-
-        // очищаем UserDefaults, чтобы симулировать первый запуск
         UserDefaults.standard.removeObject(forKey: Constants.firstLaunchServicekey)
-
         let expectation = self.expectation(description: "Completion called")
 
+        // MARK: - When
         service.checkFirstLaunch()
 
-        // Делаем паузу, чтобы async-загрузка успела выполниться
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // MARK: - Then
             XCTAssertTrue(self.presenter.loaderShown)
             XCTAssertTrue(self.presenter.loaderHidden)
             XCTAssertFalse(self.presenter.errorShown)
 
-            // Проверяем, что задачи действительно добавились в CoreData
             let tasks = self.taskStore.getAllTasks()
             XCTAssertEqual(tasks.count, 3)
-
             expectation.fulfill()
         }
 
@@ -73,22 +73,22 @@ final class FirstLaunchServiceTests: XCTestCase {
     }
 
     func testFirstLaunch_FailedLoad_ShowsError() {
+        // MARK: - Given
         mockNetworkClient.shouldFail = true
         UserDefaults.standard.removeObject(forKey: Constants.firstLaunchServicekey)
-
         let expectation = self.expectation(description: "Completion called")
 
+        // MARK: - When
         service.checkFirstLaunch()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // MARK: - Then
             XCTAssertTrue(self.presenter.loaderShown)
             XCTAssertTrue(self.presenter.loaderHidden)
             XCTAssertTrue(self.presenter.errorShown)
 
-            // Данные не должны добавиться
             let tasks = self.taskStore.getAllTasks()
             XCTAssertEqual(tasks.count, 0)
-
             expectation.fulfill()
         }
 
@@ -96,14 +96,15 @@ final class FirstLaunchServiceTests: XCTestCase {
     }
 
     func testNotFirstLaunch_DoesNothing() {
-        // Симулируем, что первый запуск уже был
+        // MARK: - Given
         UserDefaults.standard.set(true, forKey: Constants.firstLaunchServicekey)
-
         let expectation = self.expectation(description: "Completion called")
 
+        // MARK: - When
         service.checkFirstLaunch()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // MARK: - Then
             XCTAssertFalse(self.presenter.loaderShown)
             XCTAssertFalse(self.presenter.loaderHidden)
             XCTAssertFalse(self.presenter.errorShown)
@@ -114,8 +115,7 @@ final class FirstLaunchServiceTests: XCTestCase {
     }
 }
 
-// MARK: - Mocks
-
+// MARK: - Mock Network Client
 private class MockNetworkClient: NetworkClient {
 
     var shouldFail = false
@@ -141,9 +141,7 @@ private class MockNetworkClient: NetworkClient {
             }
             """
             let data = Data(json.utf8)
-            completionQueue.async {
-                onResponse(.success(data))
-            }
+            completionQueue.async { onResponse(.success(data)) }
         }
         return nil
     }
@@ -151,7 +149,7 @@ private class MockNetworkClient: NetworkClient {
     func send<T>(request: NetworkRequest,
                  type: T.Type,
                  completionQueue: DispatchQueue = .main,
-                 onResponse: @escaping (Result<T, Error>) -> Void) -> NetworkTask? where T : Decodable {
+                 onResponse: @escaping (Result<T, Error>) -> Void) -> NetworkTask? where T: Decodable {
 
         return send(request: request, completionQueue: completionQueue) { result in
             switch result {
@@ -169,6 +167,7 @@ private class MockNetworkClient: NetworkClient {
     }
 }
 
+// MARK: - Mock Presenter
 private class MockPresenter: LoadingPresentable {
     var loaderShown = false
     var loaderHidden = false
@@ -178,4 +177,3 @@ private class MockPresenter: LoadingPresentable {
     func hideLoader() { loaderHidden = true }
     func showError(retryAction: @escaping () -> Void) { errorShown = true }
 }
-

@@ -1,6 +1,8 @@
 import UIKit
 import CoreData
 
+// MARK: - Task Store Errors
+
 enum TaskStoreError: Error {
     case decodingErrorInvalidId
     case decodingErrorInvalidName
@@ -9,6 +11,8 @@ enum TaskStoreError: Error {
     case decodingErrorInvalidStatus
 }
 
+// MARK: - Task Store Delegate
+
 protocol TaskStoreDelegate: AnyObject {
     func store(
         _ store: TaskStore,
@@ -16,13 +20,22 @@ protocol TaskStoreDelegate: AnyObject {
     )
 }
 
+// MARK: - Task Store
+
 final class TaskStore: NSObject {
+    
+    // MARK: - Core Data Stack
+    
     private let persistentContainer: NSPersistentContainer
     private let context: NSManagedObjectContext
     private var fetchedResultController: NSFetchedResultsController<TaskCoreData>?
     
+    // MARK: - Delegates
+    
     weak var delegate: TaskStoreDelegate?
     private var frcDelegate: BaseFetchedResultsControllerDelegate<StoreUpdate>?
+    
+    // MARK: - Initialization
     
     convenience override init() {
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
@@ -41,6 +54,8 @@ final class TaskStore: NSObject {
         
         setupFetchedResultsController()
     }
+    
+    // MARK: - Create
     
     func addNewTask(taskForCoreData: SingleTask) {
         let trimmedName = taskForCoreData.name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -66,6 +81,8 @@ final class TaskStore: NSObject {
             }
         }
     }
+    
+    // MARK: - Read
     
     func getAllTasks() -> [SingleTask] {
         guard let objects = fetchedResultController?.fetchedObjects else { return [] }
@@ -97,9 +114,10 @@ final class TaskStore: NSObject {
     
     func isExistsSuchTrackerInCategory(withName: String) -> Bool {
         guard let tasks = fetchedResultController?.fetchedObjects else { return false }
-
         return tasks.contains { $0.name == withName }
     }
+    
+    // MARK: - Update
     
     func updateTaskData(task: SingleTask) {
         persistentContainer.performBackgroundTask { context in
@@ -123,25 +141,6 @@ final class TaskStore: NSObject {
         }
     }
     
-    func deleteTask(taskId: Int16) {
-        persistentContainer.performBackgroundTask { context in
-            let request = self.createRequestForSearchById(taskId: taskId)
-            
-            do {
-                if let existingTask = try context.fetch(request).first {
-                    context.delete(existingTask)
-                    
-                    try context.save()
-                } else {
-                    assertionFailure("Task with id \(taskId) not found")
-                }
-            } catch {
-                context.rollback()
-                print("Failed to fetch task for delete:", error)
-            }
-        }
-    }
-    
     func changeStatusOfTask(taskId: Int16) {
         persistentContainer.performBackgroundTask { context in
             let request = self.createRequestForSearchById(taskId: taskId)
@@ -161,36 +160,60 @@ final class TaskStore: NSObject {
         }
     }
     
-    private func setupFetchedResultsController() {
-            let fetchRequest = TaskCoreData.fetchRequest()
-            fetchRequest.sortDescriptors = [
-                NSSortDescriptor(keyPath: \TaskCoreData.id, ascending: true)
-            ]
-
-            let controller = NSFetchedResultsController(
-                fetchRequest: fetchRequest,
-                managedObjectContext: context,
-                sectionNameKeyPath: nil,
-                cacheName: nil
-            )
-
-            let delegate = BaseFetchedResultsControllerDelegate<StoreUpdate>(
-                ownerName: "TaskStore"
-            ) { [weak self] update in
-                guard let self else { return }
-                self.delegate?.store(self, didUpdate: update)
-            }
-
-            controller.delegate = delegate
-            frcDelegate = delegate
-            fetchedResultController = controller
-
+    // MARK: - Delete
+    
+    func deleteTask(taskId: Int16) {
+        persistentContainer.performBackgroundTask { context in
+            let request = self.createRequestForSearchById(taskId: taskId)
+            
             do {
-                try controller.performFetch()
+                if let existingTask = try context.fetch(request).first {
+                    context.delete(existingTask)
+                    try context.save()
+                } else {
+                    assertionFailure("Task with id \(taskId) not found")
+                }
             } catch {
-                print("⚠️ TaskStore: performFetch failed: \(error)")
+                context.rollback()
+                print("Failed to fetch task for delete:", error)
             }
         }
+    }
+    
+    // MARK: - Fetched Results Controller
+    
+    private func setupFetchedResultsController() {
+        let fetchRequest = TaskCoreData.fetchRequest()
+        fetchRequest.sortDescriptors = [
+            NSSortDescriptor(keyPath: \TaskCoreData.id, ascending: true)
+        ]
+
+        let controller = NSFetchedResultsController(
+            fetchRequest: fetchRequest,
+            managedObjectContext: context,
+            sectionNameKeyPath: nil,
+            cacheName: nil
+        )
+
+        let delegate = BaseFetchedResultsControllerDelegate<StoreUpdate>(
+            ownerName: "TaskStore"
+        ) { [weak self] update in
+            guard let self else { return }
+            self.delegate?.store(self, didUpdate: update)
+        }
+
+        controller.delegate = delegate
+        frcDelegate = delegate
+        fetchedResultController = controller
+
+        do {
+            try controller.performFetch()
+        } catch {
+            print("⚠️ TaskStore: performFetch failed: \(error)")
+        }
+    }
+    
+    // MARK: - Helpers
     
     private func createRequestForSearchById(taskId: Int16) -> NSFetchRequest<TaskCoreData> {
         let request: NSFetchRequest<TaskCoreData> = TaskCoreData.fetchRequest()
@@ -218,6 +241,7 @@ final class TaskStore: NSObject {
             name: name,
             descriptionText: descriptionText,
             status: taskCoreData.status,
-            date: date)
+            date: date
+        )
     }
 }

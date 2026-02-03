@@ -1,25 +1,35 @@
 import UIKit
 
+// MARK: - Context Menu Action Enum
+
 enum ContextMenuAction {
     case edit
     case share
     case delete
 }
 
+// MARK: - Task Table View Cell
+
 final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate {
+    
+    // MARK: - Callbacks
     
     var onCompletionTask: (() -> Void)?
     var menuHandler: ((ContextMenuAction) -> Void)?
     
+    // MARK: - Identifier
+    
     static let reusedIdentifier = "TaskTableViewCell"
+    
+    // MARK: - UI Components
     
     private lazy var completionButton: UIButton = {
         let completionButton = UIButton(type: .system)
         completionButton.addTarget(self, action: #selector(completionButtonClicked), for: .touchUpInside)
         completionButton.translatesAutoresizingMaskIntoConstraints = false
-        
         return completionButton
     }()
+    
     private lazy var viewForContextMenu: UIView = {
         let viewForContextMenu = UIView()
         viewForContextMenu.backgroundColor = .forViewBackground
@@ -28,32 +38,33 @@ final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate
         viewForContextMenu.addInteraction(interaction)
         
         viewForContextMenu.translatesAutoresizingMaskIntoConstraints = false
-        
         return viewForContextMenu
     }()
+    
     private lazy var titleOfTaskLabel: UILabel = {
         let titleOfTaskLabel = UILabel()
         titleOfTaskLabel.font = .headline3
         titleOfTaskLabel.translatesAutoresizingMaskIntoConstraints = false
-        
         return titleOfTaskLabel
     }()
+    
     private lazy var descriptionOfTaskLabel: UILabel = {
         let descriptionOfTaskLabel = UILabel()
         descriptionOfTaskLabel.font = .headline5
         descriptionOfTaskLabel.numberOfLines = 2
         descriptionOfTaskLabel.translatesAutoresizingMaskIntoConstraints = false
-        
         return descriptionOfTaskLabel
     }()
+    
     private lazy var dateOfTaskLabel: UILabel = {
         let dateOfTaskLabel = UILabel()
         dateOfTaskLabel.font = .headline5
         dateOfTaskLabel.textColor = .semiLightWhiteForText
         dateOfTaskLabel.translatesAutoresizingMaskIntoConstraints = false
-        
         return dateOfTaskLabel
     }()
+    
+    // MARK: - Initialization
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: .default, reuseIdentifier: reuseIdentifier)
@@ -69,6 +80,8 @@ final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate
     required init?(coder: NSCoder) {
         nil
     }
+    
+    // MARK: - Configuration
     
     func configure(task: SingleTask) {
         descriptionOfTaskLabel.text = task.descriptionText
@@ -94,6 +107,8 @@ final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate
             descriptionOfTaskLabel.textColor = .whiteForText
         }
     }
+    
+    // MARK: - Context Menu
     
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
         
@@ -121,9 +136,13 @@ final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate
         }
     }
     
+    // MARK: - Actions
+    
     @objc private func completionButtonClicked() {
         onCompletionTask?()
     }
+    
+    // MARK: - Layout
     
     private func addSubviews() {
         [completionButton, viewForContextMenu].forEach {
