@@ -353,7 +353,9 @@ extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
         }
         
         cell.onCompletionTask = { [weak self] in
+            guard let self else { return }
             
+            self.viewModel.changeStatusOfTask(taskId: task.id)
         }
         
         return cell

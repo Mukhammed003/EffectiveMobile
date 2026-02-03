@@ -28,4 +28,8 @@ final class TaskListViewModel {
     func deleteTask(taskId: Int16) {
         taskStore.deleteTask(taskId: taskId)
     }
+    
+    func changeStatusOfTask(taskId: Int16) {
+        taskStore.changeStatusOfTask(taskId: taskId)
+    }
 }

@@ -119,9 +119,7 @@ final class TaskStore: NSObject {
     }
     
     func updateTaskData(task: SingleTask) {
-        let request: NSFetchRequest<TaskCoreData> = TaskCoreData.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %d", task.id)
-        request.fetchLimit = 1
+        let request = createRequestForSearchById(taskId: task.id)
         
         do {
             if let existingTask = try context.fetch(request).first {
@@ -140,9 +138,7 @@ final class TaskStore: NSObject {
     }
     
     func deleteTask(taskId: Int16) {
-        let request: NSFetchRequest<TaskCoreData> = TaskCoreData.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %d", taskId)
-        request.fetchLimit = 1
+        let request = createRequestForSearchById(taskId: taskId)
         
         do {
             if let existingTask = try context.fetch(request).first {
@@ -155,6 +151,30 @@ final class TaskStore: NSObject {
         } catch {
             print("Failed to fetch task for delete:", error)
         }
+    }
+    
+    func changeStatusOfTask(taskId: Int16) {
+        let request = createRequestForSearchById(taskId: taskId)
+        
+        do {
+            if let existingTask = try context.fetch(request).first {
+                existingTask.status.toggle()
+                
+                saveContext()
+            } else {
+                assertionFailure("Task with id \(taskId) not found")
+            }
+        } catch {
+            print("Failed to fetch task for delete:", error)
+        }
+    }
+    
+    private func createRequestForSearchById(taskId: Int16) -> NSFetchRequest<TaskCoreData> {
+        let request: NSFetchRequest<TaskCoreData> = TaskCoreData.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %d", taskId)
+        request.fetchLimit = 1
+        
+        return request
     }
     
     private func task(taskCoreData: TaskCoreData) throws -> SingleTask {
