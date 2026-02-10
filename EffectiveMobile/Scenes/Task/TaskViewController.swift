@@ -7,7 +7,7 @@ final class TaskViewController: UIViewController {
     // MARK: - Callbacks
     
     var onCreate: ((SingleTask, @escaping (Result<Void, TreckerCreationError>) -> Void) -> Void)?
-    var onEdit: ((SingleTask, @escaping (Result<Void, TreckerCreationError>) -> Void) -> Void)?
+    var onEdit: ((SingleTask) -> Void)?
     
     // MARK: - Dependencies
     
@@ -15,7 +15,7 @@ final class TaskViewController: UIViewController {
     
     // MARK: - UI Elements
     
-    private lazy var titleOfTaskTextField: UITextField = {
+    private let titleOfTaskTextField: UITextField = {
         let titleOfTaskTextField = UITextField()
         let placeholder = NSLocalizedString("task.titleOfTask.placeholder", comment: "")
         
@@ -30,13 +30,12 @@ final class TaskViewController: UIViewController {
         titleOfTaskTextField.font = .giantText
         titleOfTaskTextField.textColor = .whiteForText
         titleOfTaskTextField.backgroundColor = .forViewBackground
-        titleOfTaskTextField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
         titleOfTaskTextField.translatesAutoresizingMaskIntoConstraints = false
         
         return titleOfTaskTextField
     }()
     
-    private lazy var dateOfTaskLabel: UILabel = {
+    private let dateOfTaskLabel: UILabel = {
         let dateOfTaskLabel = UILabel()
         dateOfTaskLabel.font = .headline5
         dateOfTaskLabel.textColor = .semiLightWhiteForText
@@ -46,7 +45,7 @@ final class TaskViewController: UIViewController {
         return dateOfTaskLabel
     }()
     
-    private lazy var placeholderOfDescriptionField = UILabel()
+    private let placeholderOfDescriptionField = UILabel()
     
     private lazy var descriptionOfTaskTextView: UITextView = {
         let descriptionOfTaskTextView = UITextView()
@@ -74,7 +73,7 @@ final class TaskViewController: UIViewController {
         return descriptionOfTaskTextView
     }()
     
-    private lazy var createButton: UIButton = {
+    private let createButton: UIButton = {
         let createButton = UIButton(type: .system)
         let textOfCreateButton = NSLocalizedString("task.createButton.title", comment: "")
         
@@ -85,7 +84,6 @@ final class TaskViewController: UIViewController {
         createButton.backgroundColor = .grayForCreateButton
         createButton.layer.cornerRadius = 16
         createButton.isEnabled = false
-        createButton.addTarget(self, action: #selector(createButtonClicked), for: .touchUpInside)
         createButton.isHidden = true
         createButton.translatesAutoresizingMaskIntoConstraints = false
         
@@ -110,6 +108,7 @@ final class TaskViewController: UIViewController {
         
         view.backgroundColor = .forViewBackground
         
+        addTargetsToUIViews()
         addSubviews()
         showNeedViewsByMode()
     }
@@ -157,19 +156,8 @@ final class TaskViewController: UIViewController {
                 status: task.status,
                 date: task.date)
             
-            onEdit?(updatedTask) { [weak self] result in
-                switch result {
-                case .success(_):
-                    self?.navigationController?.popViewController(animated: true)
-                case .failure(_):
-                    let messageOfErrorAlert = NSLocalizedString("task.errorAlert.message.onEdit", comment: "")
-                    
-                    self?.showDuplicateAlert(
-                        titleOfErrorAlert: titleOfErrorAlert,
-                        messageOfErrorAlert: messageOfErrorAlert,
-                        textOfButtonOnErrorAlert: textOfButtonOnErrorAlert)
-                }
-            }
+            onEdit?(updatedTask)
+            self.navigationController?.popViewController(animated: true)
         }
     }
     
@@ -204,6 +192,11 @@ final class TaskViewController: UIViewController {
     }
     
     // MARK: - Layout
+    
+    private func addTargetsToUIViews() {
+        titleOfTaskTextField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
+        createButton.addTarget(self, action: #selector(createButtonClicked), for: .touchUpInside)
+    }
     
     private func addSubviews() {
         [titleOfTaskTextField, dateOfTaskLabel, descriptionOfTaskTextView, createButton].forEach {

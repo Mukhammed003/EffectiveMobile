@@ -23,32 +23,28 @@ final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate
     
     // MARK: - UI Components
     
-    private lazy var completionButton: UIButton = {
+    private let completionButton: UIButton = {
         let completionButton = UIButton(type: .system)
-        completionButton.addTarget(self, action: #selector(completionButtonClicked), for: .touchUpInside)
         completionButton.translatesAutoresizingMaskIntoConstraints = false
         return completionButton
     }()
     
-    private lazy var viewForContextMenu: UIView = {
+    private let viewForContextMenu: UIView = {
         let viewForContextMenu = UIView()
         viewForContextMenu.backgroundColor = .forViewBackground
-        
-        let interaction = UIContextMenuInteraction(delegate: self)
-        viewForContextMenu.addInteraction(interaction)
         
         viewForContextMenu.translatesAutoresizingMaskIntoConstraints = false
         return viewForContextMenu
     }()
     
-    private lazy var titleOfTaskLabel: UILabel = {
+    private let titleOfTaskLabel: UILabel = {
         let titleOfTaskLabel = UILabel()
         titleOfTaskLabel.font = .headline3
         titleOfTaskLabel.translatesAutoresizingMaskIntoConstraints = false
         return titleOfTaskLabel
     }()
     
-    private lazy var descriptionOfTaskLabel: UILabel = {
+    private let descriptionOfTaskLabel: UILabel = {
         let descriptionOfTaskLabel = UILabel()
         descriptionOfTaskLabel.font = .headline5
         descriptionOfTaskLabel.numberOfLines = 2
@@ -56,7 +52,7 @@ final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate
         return descriptionOfTaskLabel
     }()
     
-    private lazy var dateOfTaskLabel: UILabel = {
+    private let dateOfTaskLabel: UILabel = {
         let dateOfTaskLabel = UILabel()
         dateOfTaskLabel.font = .headline5
         dateOfTaskLabel.textColor = .semiLightWhiteForText
@@ -74,6 +70,8 @@ final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate
         layoutMargins = .zero
         preservesSuperviewLayoutMargins = false
         
+        addTargetsForButtons()
+        addInteractionToContextMenu()
         addSubviews()
     }
     
@@ -143,6 +141,15 @@ final class TaskTableViewCell: UITableViewCell, UIContextMenuInteractionDelegate
     }
     
     // MARK: - Layout
+    
+    private func addInteractionToContextMenu() {
+        let interaction = UIContextMenuInteraction(delegate: self)
+        viewForContextMenu.addInteraction(interaction)
+    }
+    
+    private func addTargetsForButtons() {
+        completionButton.addTarget(self, action: #selector(completionButtonClicked), for: .touchUpInside)
+    }
     
     private func addSubviews() {
         [completionButton, viewForContextMenu].forEach {
