@@ -2,7 +2,7 @@
 
 import Foundation
 
-struct TaskForResponse: Codable {
+struct TaskForResponse: Decodable {
     let id: Int
     let todo: String
     let completed: Bool

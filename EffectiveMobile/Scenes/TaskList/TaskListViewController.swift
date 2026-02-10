@@ -21,7 +21,7 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
     // MARK: - Properties
     
     private let viewModel: TaskListViewModel
-    private lazy var loader = UIActivityIndicatorView(style: .large)
+    private let loader = UIActivityIndicatorView(style: .large)
     
     private lazy var searchField: UISearchController = {
         let placeholderOfSearchField = NSLocalizedString("tasks.searchField.placeholder", comment: "")
@@ -64,10 +64,8 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         return searchController
     }()
     
-    private lazy var tableViewWithTasks: UITableView = {
+    private let tableViewWithTasks: UITableView = {
         let tableViewWithTasks = UITableView()
-        tableViewWithTasks.delegate = self
-        tableViewWithTasks.dataSource = self
         tableViewWithTasks.backgroundColor = .forViewBackground
         tableViewWithTasks.register(TaskTableViewCell.self, forCellReuseIdentifier: TaskTableViewCell.reusedIdentifier)
         tableViewWithTasks.separatorStyle = .singleLine
@@ -78,7 +76,7 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         return tableViewWithTasks
     }()
     
-    private lazy var countOfTasksLabel: UILabel = UILabel()
+    private let countOfTasksLabel: UILabel = UILabel()
     
     private lazy var footerView: UIView = {
         let footerView = UIView()
@@ -134,6 +132,8 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
         super.viewDidLoad()
         view.backgroundColor = .forViewBackground
         viewModel.taskStore.delegate = self
+        
+        setupTableView()
         addSubviewsAndSetupAllViews()
         updateCountOfTasks()
     }
@@ -192,6 +192,11 @@ final class TaskListViewController: UIViewController, LoadingPresentable {
     }
     
     // MARK: - Private Methods
+    
+    private func setupTableView() {
+        tableViewWithTasks.delegate = self
+        tableViewWithTasks.dataSource = self
+    }
     
     private func addSubviewsAndSetupAllViews() {
         [loader, tableViewWithTasks, footerView].forEach { view.addSubview($0) }
@@ -335,13 +340,8 @@ extension TaskListViewController: UITableViewDataSource, UITableViewDelegate {
                 let backButtonTitle = NSLocalizedString("navigationItem.backButton.title", comment: "")
                 self.navigationItem.backButtonTitle = backButtonTitle
                 
-                viewController.onEdit = { [weak self] task, completion in
-                    guard let self else { return }
-                    if self.viewModel.isExistsSuchTask(name: task.name) {
-                        completion(.failure(.duplicate))
-                    }
+                viewController.onEdit = { task in
                     self.viewModel.updateTask(task: task)
-                    completion(.success(()))
                 }
                 
                 navigationController?.pushViewController(viewController, animated: true)
